@@ -1,23 +1,24 @@
 int BOX_HEIGHT = 80;
 int BOX_WIDTH = 80;
+int gridOffset = 10;
 int cols= 4;
 int rows= 4;
 Grid game;
 boolean gameOver = false;
 boolean rectOver;
-int rectX = 140;
-int rectY = 100;
 int rectSize = 60;
 void setup() {   
     background(0);
-    size(330, 400); 
+    size(340, 340);
     smooth();
+    textFont("Courier");
+    textAlign(CENTER, CENTER);
     game = new Grid(cols,rows);
-    noLoop();
+    frameRate(4);
 } 
 
 void update(int x, int y) {
-    if ( overRect(rectX, rectY, rectSize, rectSize) ) {
+    if ( overRect(width*0.5-rectSize*0.5, height*0.5-rectSize*0.5, rectSize, rectSize) ) {
         rectOver = true;
     } 
     else {
@@ -40,16 +41,20 @@ void draw() {
     }
     else{
         update(mouseX,mouseY);
-        background(0);
-        textSize(25);
-        fill(255);
-        text("Nelly Bo Belly Small Belly", 20, 200);
-        stroke(255);
-        rect(rectX, rectY, rectSize, rectSize);
-        textSize(20);
-        fill(0);
-        text("Again", 145, 135);
+        showRetry();
     }
+}
+
+void showRetry() {
+    background(0);
+    textSize(25);
+    fill(255);
+    text("Nelly Bo Belly Small Belly?", width*0.5, height*0.3);
+    stroke(255);
+    rect(width*0.5-rectSize*0.5, height*0.5-rectSize*0.5, rectSize, rectSize);
+    textSize(20);
+    fill(0);
+    text("YES", width*0.5, height*0.5);
 }
 
 void mousePressed() {
@@ -84,6 +89,7 @@ void keyPressed() {
         }
         if (!game.vertMovable() && !game.horizMovable()){
             gameOver = true;
+            showRetry();
         }
     }
     redraw();
@@ -303,11 +309,11 @@ class Box {
         int logV = log(value)/log(2);     
         fill(200, 20*logV+50, 20*logV+50);
         stroke(255);
-        rect(col*BOX_WIDTH, row*BOX_HEIGHT, BOX_WIDTH, BOX_HEIGHT);
-        textSize(20);
-        fill(200);
+        rect(col*BOX_WIDTH+gridOffset, row*BOX_HEIGHT+gridOffset, BOX_WIDTH, BOX_HEIGHT);
         if (value > 0){    
-            text(this.value, (col*BOX_WIDTH)+30, (row*BOX_HEIGHT)+40, 1);
+            textSize(20);
+            fill(200);
+            text(this.value, col*BOX_WIDTH+gridOffset+BOX_WIDTH*0.5, row*BOX_HEIGHT+gridOffset+BOX_WIDTH*0.5, 1);
         }
         this.changed = false;
     }
