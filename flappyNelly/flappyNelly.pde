@@ -22,9 +22,9 @@ void setCookie(int score){
 }
 
 void setup() { 
-    pillarUp = loadImage("pillarUp.jpg");
-    pillarDown = loadImage("pillarDown.jpg");
-    nelly = loadImage("smiles.jpg");
+    pillarUp = loadImage("flappyNelly/pillarUp.jpg");
+    pillarDown = loadImage("flappyNelly/pillarDown.jpg");
+    nelly = loadImage("flappyNelly/smiles.jpg");
     textFont("Courier");
     textSize(20);
     background(0);
