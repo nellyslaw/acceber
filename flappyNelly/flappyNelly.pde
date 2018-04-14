@@ -3,6 +3,7 @@ boolean gameOver = false;
 PImage pillarUp;
 PImage pillarDown;
 PImage nelly;
+PImage andy;
 final String hsParam = "nellyhs=";
 
 int loadCookie(){
@@ -25,6 +26,7 @@ void setup() {
     pillarUp = loadImage("flappyNelly/pillarUp.jpg");
     pillarDown = loadImage("flappyNelly/pillarDown.jpg");
     nelly = loadImage("flappyNelly/smiles.jpg");
+    andy = loadImage("flappyNelly/smokes.jpg");
     textFont("Courier");
     textSize(20);
     background(0);
@@ -37,7 +39,8 @@ void setup() {
 void draw() { 
     if (!gameOver){  
         game.scroll();
-        gameOver = game.checkCollision();
+        game.checkCollision();
+        gameOver = game.isGameOver();
         game.display();
         if(gameOver){
             setCookie(game.getHighScore());
@@ -48,7 +51,12 @@ void draw() {
 
 void mousePressed() {
     if (!gameOver){
-        game.getBird().flyUp();
+        if (game.nelly && mouseButton == LEFT && game.nelly.isAlive()){
+            game.nelly.flyUp();
+        }
+        else if (game.andy && mouseButton == RIGHT && game.andy.isAlive()){
+            game.andy.flyUp();
+        }
     }
     else{
         game = new World();
@@ -58,28 +66,20 @@ void mousePressed() {
      
 }
 
-void keyPressed() {
-    if (!gameOver)
-        game.getBird().flyUp();
-    else{
-        game = new World();
-        gameOver = false;
-        frameRate(30);
-    }
-}
-
 class World {
-    int Yvelocity = 5;
+    float Xvelocity = 5;
     int dist = 0;
     int spawnDist = 180;
     int highScore = loadCookie();
     int currentScore = 0;
-    
-    Bird flappyNelly = new Bird();
-    List<Pillar> pillars = new ArrayList();  
+    Bird nelly = new Bird(0,15,20.0);
+    Bird andy = new Bird(1,50,20.0);
+    List<Bird> birds = new ArrayList();
+    List<Pillar> pillars = new ArrayList(); 
     
     World(){
-        this.flappyNelly = new Bird();
+        this.birds.add(nelly);
+        this.birds.add(andy);
     }
     
     private void updateScore(){
@@ -90,61 +90,88 @@ class World {
     }
     
     public void scroll(){
-        flappyNelly.move();
-        for(int i=pillars.size()-1;i>0;i--){
+        for(int i=pillars.size()-1;i>=0;i--){
             Pillar p = pillars.get(i);
-            p.scroll(Yvelocity);
+            p.scroll(Xvelocity);
             if (p.getXpos() <= -1*p.getThickness()) {
                 pillars.remove(i);
             }
-            if (p.getXpos()+p.getThickness() <= flappyNelly.getPos().x && !p.hasCounted()){
-                p.setCounted(true);
-                updateScore();
+        }
+        Pillar firstP = pillars.get(0);
+        for(int i= birds.size()-1; i>=0; i--){
+            Bird b = birds.get(i);
+            b.move();
+            if (firstP){
+                if (firstP.getXpos()+firstP.getThickness() <= b.getPos().x && !firstP.hasCounted(b)){
+                    firstP.count(b);
+                    updateScore();
+                }
+                if (b.getPos().x < -1*b.getSize()){
+                    birds.remove(b);
+                }
             }
         }
         if(dist>= spawnDist){
             dist = 0;
             pillars.add(new Pillar());
         }
-        dist += Yvelocity;
+        dist += Xvelocity;
     }
     
-    public boolean checkCollision(){
-        PVector birdPos = flappyNelly.getPos();
-        if (birdPos.y == 0 || birdPos.y == height - flappyNelly.getSize()){
-            return true;
-        }
-        else if (hitPillar(birdPos)){
-            return true;
-        }
-        return false;
-    }
-    
-    private boolean hitPillar(PVector birdPos){
-        for (Pillar p: pillars){
-            if (p.getXpos()-birdPos.x >= -1*p.getThickness() && p.getXpos()-birdPos.x <= flappyNelly.getSize()){
-                if (birdPos.y <= p.getGateTop()){
-                    if (p.getXpos()-birdPos.x != flappyNelly.getSize()){
-                        flappyNelly.setYpos(p.getGateTop());
-                    }
-                    return true;
+    public void checkCollision(){
+        for (Bird b : birds){
+            int pillarBottom;
+            if (b.isAlive()){ 
+                PVector birdPos = b.getPos();
+                if (birdPos.y == 0 || birdPos.y == height - b.getSize()){
+                    b.kill(this.Xvelocity, 0);
                 }
-                else if (birdPos.y+flappyNelly.getSize() >= p.getGateBottom()){
-                    if (p.getXpos()-birdPos.x != flappyNelly.getSize()){
-                        flappyNelly.setYpos(p.getGateBottom()-flappyNelly.getSize());
-                    }
-                    return true;
+                else if ((pillarBottom = hitPillar(b)) > -1){
+                    b.kill(this.Xvelocity, pillarBottom);
                 }
             }
         }
-        return false;
+    }
+    
+    public boolean isGameOver(){
+        for (Bird b: birds){
+            if (b.isAlive()){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private int hitPillar(Bird b){
+        PVector birdPos = b.getPos();
+        for (Pillar p: pillars){
+            if (p.getXpos()-birdPos.x >= -1*p.getThickness() && p.getXpos()-birdPos.x <= b.getSize()){
+                if (birdPos.y <= p.getGateTop()){
+                    if (p.getXpos()-birdPos.x != b.getSize()){
+                        b.setYpos(p.getGateTop());
+                        return p.getGateBottom();
+                    }
+                    return 0;
+                }
+                else if (birdPos.y+b.getSize() >= p.getGateBottom()){
+                    if (p.getXpos()-birdPos.x != b.getSize()){
+                        b.setYpos(p.getGateBottom()-b.getSize());
+                        return p.getGateBottom();
+                    }
+                    return 0;
+                }
+            }
+        }
+        return -1;
     }
     
     public void display() {
         background(0);
-        flappyNelly.show();
         for (Pillar p: pillars){
             p.show();
+        }
+        for (Bird b: birds){
+            b.show();
         }
         showScores();
     }
@@ -156,8 +183,8 @@ class World {
         text(score,width/2,25);
     }
     
-    public Bird getBird(){
-        return this.flappyNelly;
+    public Bird getBird(int index){
+        return this.birds.get(index);
     }
     
     public int getHighScore(){
@@ -166,25 +193,50 @@ class World {
 }
 
 class Bird{
-    final int Xpos = 15;
     final int size = 25;
     final float gravity = -1.5;
-    final float lift = 20;
+    int Xpos;
+    float Xvelocity = 0;
+    float lift;
     int Ypos = height/2 - size;
-    float velocity = 0;
+    float Yvelocity = 0;
+    boolean alive = true;
+    int XfloorPos = height-size;
+    int id;
+    
+    public Bird(int id, int Xpos, float lift){
+        this.Xpos = Xpos;
+        this.lift = lift;
+        this.id = id;
+    }
     
     public void show(){
-        image(nelly,Xpos,Ypos,size,size);
+        if (id == 0){
+            image(nelly,Xpos,Ypos,size,size);
+        }
+        else if (id == 1){
+            image(andy,Xpos,Ypos,size,size);
+        }
     }
     
     public void move() {
-        this.Ypos += this.velocity;
-        this.velocity -= gravity;
+        this.Ypos += this.Yvelocity;
+        this.Yvelocity -= gravity;
+        this.Xpos -= this.Xvelocity;
         if (Ypos < 0){
             Ypos = 0;
         }
-        if (Ypos > height-size){
-            Ypos = height-size;
+        if (Ypos > XfloorPos){
+            Ypos = XfloorPos;
+        }
+    }
+    
+    public void kill(float Xvecocity, int floor){
+        this.alive = false;
+        this.Xvelocity = Xvecocity;
+        this.Yvelocity = 0;
+        if (floor > 0){
+            this.XfloorPos = floor-size;
         }
     }
     
@@ -192,7 +244,7 @@ class Bird{
         this.Ypos = Ypos;
     }
     public void flyUp(){
-        this.velocity = -1*lift;
+        this.Yvelocity = -1*lift;
     }
         
     public int getSize() {
@@ -202,6 +254,10 @@ class Bird{
     public PVector getPos() {
         return new PVector(Xpos,Ypos);
     }
+    
+    public boolean isAlive(){
+        return this.alive;
+    } 
 }
 
 class Pillar {
@@ -209,24 +265,23 @@ class Pillar {
     int thickness = 50;
     int pilHeight = 300;
     int gatePos = int(random(10,height-pilHeight));
-    boolean counted = false;
-    
+    List<Bird> counted = new ArrayList();    
     
     public void show(){
         image(pillarDown,Xpos, gatePos-180, thickness, 180);
         image(pillarUp,Xpos, gatePos+pilHeight, thickness, 180);
     }
     
-    public void scroll(int velocity){
+    public void scroll(float velocity){
         this.Xpos -= velocity;
     }
     
-    public void setCounted(boolean counted){
-        this.counted = counted;
+    public void count(Bird b){
+        this.counted.add(b);
     }
     
-    public boolean hasCounted(){
-        return this.counted;
+    public boolean hasCounted(Bird b){
+        return this.counted.contains(b);
     }
     
     public int getXpos(){
