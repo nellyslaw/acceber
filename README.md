@@ -7,14 +7,14 @@
 <canvas data-processing-sources="flappyNelly/flappyNelly.pde"></canvas>
 
 ## Hunt Schedule
+<span/>
 <div>
-	<p>Target Similarity Criteria</p>
+	<h5>Target Similarity Criteria</h5>
 		<label for="raceSlider_name">Other</label>
-		<input type="range" id="raceSlider_id" name="raceSlider_name" min="0" max="100"/>
+		<input type="range" id="raceSlider_id" name="raceSlider_name" value="50" min="0" max="100"/>
 		<label for="raceSlider_name">Asian</label>
-
-	<p id="huntDate_p" hidden="true">Target Date of Birth</p>
-	<p id="oii_p" hidden="true">Why Bother</p>
+	<h5 id="oii_p" hidden="true">Why Bother</h5>
+	<h5 id="huntDate_p" hidden="true">Target Date of Birth</h5>
 		<input type="date" id="huntDate_id" name="huntDate_name" hidden="true"/>
 		<label for="huntDate_name" id="huntAdvice_id"></label>
 </div>
